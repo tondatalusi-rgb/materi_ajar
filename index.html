@@ -1,0 +1,522 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMPN 10 BANAWA SELATAN</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            margin: 0; padding: 20px; 
+            background-color: #f4f7f6; 
+            color: #333;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        
+        .header { 
+            display: flex; align-items: center; 
+            border-bottom: 2px solid #ddd; 
+            padding-bottom: 15px; margin-bottom: 15px;
+        }
+        .logo { max-width: 80px; height: auto; margin-right: 20px; }
+        .header-text { text-align: left; }
+        .header-text h1 { margin: 0; color: #0056b3; }
+        .header-text .alamat { font-style: italic; color: #555; font-size: 14px; margin: 5px 0; }
+        .header-text p { margin: 5px 0; }
+        
+        .view { display: none; margin-top: 20px; }
+        .view.active { display: block; }
+        
+        .card { 
+            background: #fff; border: 1px solid #ddd; border-radius: 8px; 
+            padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        /* Navigasi setelah Login */
+        nav { 
+            display: none; /* Sembunyi by default, muncul setelah login */
+            background: #eee; padding: 10px; border-radius: 8px; 
+            text-align: right; /* Pindahkan ke kanan */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        nav #user-info { font-weight: bold; padding-left: 15px; }
+        nav button#btn-logout { 
+            font-size: 14px; padding: 8px 15px; 
+            border: none; border-radius: 5px; cursor: pointer; 
+            background: #dc3545; color: white;
+        }
+
+        /* Style Form Login */
+        #view-login { max-width: 400px; margin: 40px auto; }
+        #view-login h2 { text-align: center; }
+        
+        form label { display: block; margin-top: 10px; font-weight: bold; }
+        form input[type="text"], form input[type="password"], form textarea {
+            width: 100%; padding: 8px; margin-top: 5px; border-radius: 4px; border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+        form button { 
+            font-size: 16px; padding: 10px 20px; margin-top: 20px; 
+            border: none; border-radius: 5px; cursor: pointer; background: #007bff; color: white;
+            width: 100%;
+        }
+        form button:disabled { background: #aaa; }
+        #login-error { color: red; margin-top: 10px; text-align: center; }
+
+        /* Style Absensi */
+        #view-absensi h2 { text-align: center; }
+        #camera-container { 
+            position: relative; width: 100%; max-width: 500px; 
+            margin: 10px auto; background: #000;
+        }
+        #camera-feed { width: 100%; height: auto; }
+        #btn-take-photo { 
+            display: block; width: 60px; height: 60px; 
+            border-radius: 50%; border: 5px solid white; 
+            background: #f00; cursor: pointer; margin: 10px auto;
+        }
+        #btn-take-photo:disabled { background: #888; }
+        #absensi-status { text-align: center; font-size: 16px; padding: 10px; }
+        #absensi-status.success { color: green; }
+        #absensi-status.error { color: red; }
+        canvas { display: none; } /* Canvas untuk capture, disembunyikan */
+
+        /* Style Materi */
+        #materi-detail-links a { 
+            display: inline-block; margin-right: 10px; margin-bottom: 10px; padding: 10px 15px; 
+            background: #e9ecef; color: #007bff; text-decoration: none; border-radius: 5px; 
+        }
+        #materi-detail-links a:hover { background: #d6dbe0; }
+        #materi-list .card { cursor: pointer; }
+        #materi-list .card:hover { background-color: #fcfcfc; border-color: #007bff; }
+        #loading { font-size: 18px; text-align: center; color: #555; }
+        .back-button { 
+            font-size: 14px; padding: 8px 12px; cursor: pointer; 
+            background: #6c757d; color: white; border: none; border-radius: 5px;
+        }
+
+        .footer {
+            text-align: center; margin-top: 40px; padding-top: 20px;
+            border-top: 1px solid #ddd; font-size: 14px; color: #888;
+        }
+        .footer p { margin: 5px 0; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <div class="header">
+            <img src="tutwuri.png" alt="Logo Sekolah" class="logo">
+            <div class="header-text">
+                <h1>SMPN 10 BANAWA SELATAN</h1>
+                <p class="alamat">Jl. PNPM Dusun III Bambami, Desa Malino, Kec. Banawa Selatan, Kab. Donggala, Sulawesi Tengah</p>
+                <p>Sistem Interaktif Monitoring Pembelajaran</p>
+            </div>
+        </div>
+        
+        <nav id="navbar">
+            <span id="user-info"></span>
+            <button id="btn-logout">Logout</button>
+        </nav>
+
+        <div id="view-login" class="view active">
+            <div class="card">
+                <h2>Silakan Login</h2>
+                <form id="form-login">
+                    <label for="userID">UserID</label>
+                    <input type="text" id="userID" name="userID" required>
+                    
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                    
+                    <button type="submit" id="btn-login">Login</button>
+                    <p id="login-error"></p>
+                </form>
+            </div>
+        </div>
+
+        <div id="view-absensi" class="view">
+            <h2>Absensi Wajib</h2>
+            <p style="text-align: center;">Harap aktifkan lokasi dan izinkan kamera untuk melanjutkan.</p>
+            <div id="camera-container">
+                <video id="camera-feed" autoplay playsinline></video>
+                <canvas id="camera-capture"></canvas> </div>
+            <button id="btn-take-photo" disabled>Ambil Foto</button>
+            <div id="absensi-status">Mengambil data lokasi...</div>
+        </div>
+
+        <div id="view-guru" class="view">
+            <h2>Dashboard Guru: Tambah Materi Baru</h2>
+            <div class="card">
+                <form id="form-materi">
+                    <label for="judul">Judul Materi</label>
+                    <input type="text" id="judul" name="judul" required>
+                    <label for="deskripsi">Deskripsi Singkat</label>
+                    <textarea id="deskripsi" name="deskripsi" rows="3"></textarea>
+                    
+                    <label for="kelas">Untuk Kelas</label>
+                    <input type="text" id="kelas" name="kelas" placeholder="Contoh: 7A" required>
+
+                    <label for="linkVideo">Link Video</label>
+                    <input type="text" id="linkVideo" name="linkVideo">
+                    <label for="linkGambar">Link Gambar</label>
+                    <input type="text" id="linkGambar" name="linkGambar">
+                    <label for="linkBuku">Link Buku</label>
+                    <input type="text" id="linkBuku" name="linkBuku">
+                    <label for="linkLKPD">Link LKPD (Google Form)</label>
+                    <input type="text" id="linkLKPD" name="linkLKPD" required>
+
+                    <button type="submit" id="btn-submit-materi">Kirim Materi</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="view-siswa-list" class="view">
+            <h2>Dashboard Siswa: Pilih Materi</h2>
+            <div id="loading">Memuat materi...</div>
+            <div id="materi-list"></div>
+        </div>
+
+        <div id="view-siswa-detail" class="view">
+            <button class="back-button" onclick="showView('view-siswa-list')">Kembali ke Daftar Materi</button>
+            <h2 id="materi-detail-judul"></h2>
+            <p id="materi-detail-deskripsi"></p>
+            <div class="card">
+                <p>Status: <strong id="status-baca">Mulai membaca... (Timer 3 menit berjalan)</strong></p>
+                <div id="materi-detail-links"></div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>&copy; 2025 SMPN 10 BANAWA SELATAN (Kombel Tonda Talusi - Soubatik) </p>
+            <p>Dikembangkan untuk mendukung pembelajaran interaktif.</p>
+        </div>
+    </div> 
+
+    <script>
+        // ##################################################################
+        // PENTING! GANTI DENGAN URL WEB APP BARU ANDA
+        // ##################################################################
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzDvcbv0bW3AvF6wBazl0nWHOlqSgMgdRE2PoPDb30wFOlMBmbbsAbMIE5y7niSz43U/exec";
+        // ##################################################################
+
+        // --- State Aplikasi ---
+        let currentView = "";
+        let allMateri = [];
+        let currentMateriID = null;
+        let readTimer = null;
+        let currentUser = null; // Menyimpan data user yang login
+        let absensiData = {
+            latitude: null,
+            longitude: null,
+            stream: null
+        };
+
+        // --- Elemen DOM ---
+        const views = {
+            login: document.getElementById("view-login"),
+            absensi: document.getElementById("view-absensi"),
+            guru: document.getElementById("view-guru"),
+            siswaList: document.getElementById("view-siswa-list"),
+            siswaDetail: document.getElementById("view-siswa-detail"),
+        };
+        const navbar = document.getElementById("navbar");
+        const userInfo = document.getElementById("user-info");
+        const loading = document.getElementById("loading");
+        const materiListContainer = document.getElementById("materi-list");
+
+        // --- Fungsi Logika Utama ---
+
+        function showView(viewName) {
+            currentView = viewName;
+            Object.values(views).forEach(view => view.classList.remove("active"));
+            if (readTimer) clearTimeout(readTimer);
+            if (views[viewName]) {
+                views[viewName].classList.add("active");
+            }
+
+            // Tampilkan/Sembunyikan Navigasi
+            if (viewName === 'login') {
+                navbar.style.display = "none";
+            } else {
+                navbar.style.display = "flex";
+            }
+        }
+
+        // --- Fungsi Login & Logout ---
+        
+        function handleLogin(e) {
+            e.preventDefault();
+            const btnLogin = document.getElementById("btn-login");
+            const loginError = document.getElementById("login-error");
+            btnLogin.disabled = true;
+            btnLogin.innerText = "Mencoba Login...";
+            loginError.innerText = "";
+
+            const formData = new FormData(e.target);
+            formData.append("action", "checkLogin");
+
+            fetch(SCRIPT_URL, { method: "POST", body: formData })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        currentUser = data.user; // Simpan data user
+                        userInfo.innerText = `Halo, ${currentUser.nama} (${currentUser.peran})`;
+                        
+                        if (currentUser.peran === "Guru") {
+                            showView('guru');
+                        } else if (currentUser.peran === "Siswa") {
+                            showView('absensi');
+                            startAbsensi(); // Mulai proses absensi
+                        }
+                    } else {
+                        loginError.innerText = data.message;
+                    }
+                })
+                .catch(error => {
+                    loginError.innerText = "Error: " + error.message;
+                })
+                .finally(() => {
+                    btnLogin.disabled = false;
+                    btnLogin.innerText = "Login";
+                });
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            if (absensiData.stream) {
+                absensiData.stream.getTracks().forEach(track => track.stop()); // Matikan kamera
+            }
+            document.getElementById("form-login").reset();
+            showView('login');
+        }
+
+        // --- Fungsi Absensi (Siswa) ---
+
+        function startAbsensi() {
+            const statusEl = document.getElementById("absensi-status");
+            const btnPhoto = document.getElementById("btn-take-photo");
+            const videoEl = document.getElementById("camera-feed");
+            
+            btnPhoto.disabled = true;
+            statusEl.innerText = "Mengambil data lokasi...";
+            statusEl.className = "";
+
+            // 1. Ambil Lokasi
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    absensiData.latitude = pos.coords.latitude;
+                    absensiData.longitude = pos.coords.longitude;
+                    statusEl.innerText = "Lokasi didapat. Menyalakan kamera...";
+                    startCamera(); // Lanjut nyalakan kamera
+                },
+                (err) => {
+                    statusEl.innerText = "Error: Gagal mengambil lokasi. Izinkan akses lokasi.";
+                    statusEl.className = "error";
+                }
+            );
+
+            // 2. Nyalakan Kamera
+            async function startCamera() {
+                try {
+                    absensiData.stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                    videoEl.srcObject = absensiData.stream;
+                    videoEl.play();
+                    btnPhoto.disabled = false; // Aktifkan tombol foto
+                    statusEl.innerText = "Lokasi dan Kamera Siap. Silakan ambil foto.";
+                    statusEl.className = "success";
+                } catch (err) {
+                    statusEl.innerText = "Error: Gagal menyalakan kamera. Izinkan akses kamera.";
+                    statusEl.className = "error";
+                }
+            }
+        }
+
+        function takePhoto() {
+            const statusEl = document.getElementById("absensi-status");
+            const btnPhoto = document.getElementById("btn-take-photo");
+            const videoEl = document.getElementById("camera-feed");
+            const canvasEl = document.getElementById("camera-capture");
+            
+            btnPhoto.disabled = true;
+            statusEl.innerText = "Mengirim absensi...";
+
+            // Set ukuran canvas sesuai video
+            canvasEl.width = videoEl.videoWidth;
+            canvasEl.height = videoEl.videoHeight;
+            
+            // Gambar frame video ke canvas
+            const context = canvasEl.getContext('2d');
+            context.drawImage(videoEl, 0, 0, canvasEl.width, canvasEl.height);
+            
+            // Dapatkan data gambar sebagai Base64
+            const fotoData = canvasEl.toDataURL('image/jpeg', 0.8); // Kualitas 80%
+
+            // Matikan kamera
+            if (absensiData.stream) {
+                absensiData.stream.getTracks().forEach(track => track.stop());
+            }
+
+            // Kirim data ke Google Sheet
+            const formData = new FormData();
+            formData.append("action", "logAbsensi");
+            formData.append("userID", currentUser.userID);
+            formData.append("nama", currentUser.nama);
+            formData.append("kelas", currentUser.kelas);
+            formData.append("latitude", absensiData.latitude);
+            formData.append("longitude", absensiData.longitude);
+            formData.append("fotoData", fotoData);
+
+            fetch(SCRIPT_URL, { method: "POST", body: formData })
+                .then(res => res.json())
+                .then(data => {
+                    if(data.status === "success") {
+                        alert("Absensi berhasil dicatat!");
+                        showView('siswaList');
+                        loadMateri(); // Baru muat materi setelah absen
+                    } else {
+                        statusEl.innerText = "Gagal kirim absensi: " + data.message;
+                        statusEl.className = "error";
+                        btnPhoto.disabled = false;
+                    }
+                })
+                .catch(err => {
+                    statusEl.innerText = "Error: " + err.message;
+                    statusEl.className = "error";
+                    btnPhoto.disabled = false;
+                });
+        }
+
+        // --- Fungsi Materi (Siswa) ---
+
+        function loadMateri() {
+            loading.style.display = "block";
+            materiListContainer.innerHTML = "";
+
+            // Kirim parameter kelas milik user yang login
+            fetch(`${SCRIPT_URL}?action=getMateri&kelas=${currentUser.kelas}`)
+                .then(response => response.json())
+                .then(data => {
+                    allMateri = data;
+                    loading.style.display = "none";
+                    if(data.length === 0) {
+                        materiListContainer.innerHTML = `<p>Belum ada materi untuk kelas ${currentUser.kelas}.</p>`;
+                        return;
+                    }
+                    data.forEach(materi => {
+                        const card = document.createElement("div");
+                        card.className = "card";
+                        card.innerHTML = `<h3>${materi.judul}</h3><p>${materi.deskripsi}</p>`;
+                        card.onclick = () => viewMateriDetail(materi.materiID);
+                        materiListContainer.appendChild(card);
+                    });
+                })
+                .catch(error => {
+                    loading.innerHTML = "Gagal memuat materi.";
+                    console.error("Error fetching materi:", error);
+                });
+        }
+
+        function viewMateriDetail(materiID) {
+            currentMateriID = materiID;
+            const materi = allMateri.find(m => m.materiID == materiID);
+            if (!materi) return;
+
+            document.getElementById("materi-detail-judul").innerText = materi.judul;
+            document.getElementById("materi-detail-deskripsi").innerText = materi.deskripsi;
+            
+            const linksContainer = document.getElementById("materi-detail-links");
+            linksContainer.innerHTML = ""; 
+
+            if(materi.linkVideo) linksContainer.appendChild(createTrackedLink("🎞️ Tonton Video", materi.linkVideo, "Klik Link Video", 10));
+            if(materi.linkGambar) linksContainer.appendChild(createTrackedLink("🖼️ Lihat Gambar", materi.linkGambar, "Klik Link Gambar", 10));
+            if(materi.linkBuku) linksContainer.appendChild(createTrackedLink("📚 Baca Buku", materi.linkBuku, "Klik Link Buku", 10));
+            if(materi.linkLKPD) linksContainer.appendChild(createTrackedLink("📝 Kerjakan LKPD", materi.linkLKPD, "Submit LKPD", 50));
+
+            const statusBaca = document.getElementById("status-baca");
+            statusBaca.innerText = "Mulai membaca... (Timer 3 menit berjalan)";
+            statusBaca.style.color = "#333";
+            
+            readTimer = setTimeout(() => {
+                statusBaca.innerText = "Selesai (✅ Poin 20 telah dicatat)";
+                statusBaca.style.color = "green";
+                logAktivitas(currentMateriID, "Baca > 3 Menit", 20);
+            }, 180000); // 3 menit
+
+            showView('siswaDetail');
+        }
+
+        function createTrackedLink(text, url, aksi, poin) {
+            const a = document.createElement("a");
+            a.href = url;
+            a.innerText = text;
+            a.target = "_blank";
+            a.onclick = () => {
+                logAktivitas(currentMateriID, aksi, poin);
+                alert(`Poin ${poin} untuk "${aksi}" telah dicatat!`);
+            };
+            return a;
+        }
+
+        function logAktivitas(materiID, aksi, poin) {
+            const formData = new FormData();
+            formData.append("action", "logAktivitas");
+            formData.append("userID", currentUser.userID);
+            formData.append("nama", currentUser.nama);
+            formData.append("kelas", currentUser.kelas);
+            formData.append("materiID", materiID);
+            formData.append("aksi", aksi);
+            formData.append("poin", poin);
+            
+            fetch(SCRIPT_URL, { method: "POST", body: formData })
+                .then(res => res.json())
+                .then(data => {
+                    if(data.status !== "success") console.error("Gagal log:", data.message);
+                });
+        }
+
+        // --- Fungsi Materi (Guru) ---
+        
+        function handleMateriSubmit(e) {
+            e.preventDefault();
+            const form = e.target;
+            const btnSubmit = document.getElementById("btn-submit-materi");
+            btnSubmit.disabled = true;
+            btnSubmit.innerText = "Mengirim...";
+
+            const formData = new FormData(form);
+            formData.append("action", "addMateri"); 
+
+            fetch(SCRIPT_URL, { method: "POST", body: formData })
+                .then(res => res.json())
+                .then(data => {
+                    if(data.status === "success") {
+                        alert("Materi berhasil ditambahkan!");
+                        form.reset();
+                    } else {
+                        alert("Gagal: " + data.message);
+                    }
+                })
+                .catch(error => alert("Error: " + error.message))
+                .finally(() => {
+                    btnSubmit.disabled = false;
+                    btnSubmit.innerText = "Kirim Materi";
+                });
+        }
+
+        // --- Event Listeners ---
+        document.getElementById("form-login").addEventListener("submit", handleLogin);
+        document.getElementById("btn-logout").addEventListener("click", handleLogout);
+        document.getElementById("btn-take-photo").addEventListener("click", takePhoto);
+        document.getElementById("form-materi").addEventListener("submit", handleMateriSubmit);
+
+        // --- Inisialisasi ---
+        showView('login'); // Tampilan default adalah Login
+
+    </script>
+</body>
+</html>
